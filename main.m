@@ -68,7 +68,7 @@ for i_snr = 1:length(list_EbN0_dB)
         
         %% Recepteur
         rx_bit = step(demod_psk,rx_sps);
-        rx_scr_oct = b2o(rx_bit<0);
+        rx_scr_oct = step(b2o,rx_bit<0);
         rx_oct = bitxor(rx_scr_oct,dvb_scramble); % scrambler
         n_erreur = n_erreur + biterr(tx_oct,rx_oct);
         n_trame = n_trame + 1;
