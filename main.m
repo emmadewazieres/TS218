@@ -5,8 +5,8 @@ clc
 %% Parametres des objets participant � l'emetteur
 waveform_params = configure_waveform();
 
-[mod_psk, demod_psk]        = build_mdm(waveform_params);
-dvb_scramble                = build_dvb_scramble();
+[mod_psk, demod_psk] = build_mdm(waveform_params);
+dvb_scramble         = build_dvb_scramble();
 
 % Parametre du flux TS
 % -------------------------------------------------------------------------
@@ -22,8 +22,7 @@ frame_bit_sz   = 8*frame_oct_sz; % Une trame = 8 paquets
 % -------------------------------------------------------------------------
 tx_vid_fname = 'tx_stream.ts';  % Fichier contenant le message � transmettre
 message_source = dsp.BinaryFileReader('Filename', tx_vid_fname, 'SamplesPerFrame', msg_oct_sz*pckt_per_frame, 'DataType', 'uint8');
-% -------------------------------------------------------------------------
-
+% ------------------------------------------------------------------------
 
 
 %%
@@ -31,25 +30,30 @@ Delta_f = 0;
 Phi0 = 0;
 alpha = 1;
 del_val = 0;
-list_EbN0 = 0:10;
-
+list_EbN0_dB = 0:10;
+list_EbN0 = 10.^(list_EbN0_dB/10);
 delay = dsp.VariableFractionalDelay('MaximumDelay',8000);
 doppler = comm.PhaseFrequencyOffset(...
     'FrequencyOffset',Delta_f,...
     'PhaseOffset',Phi0,...
     'SampleRate',waveform_params.sim.Fe);
 
-awgn_channel = comm.AWGNChannel('NoiseMethod', 'Signal to noise ratio (Eb/No)','EbNo',list_EbN0(1),'BitsPerSymbol',2,'SignalPower',alpha^2);
+awgn_channel = comm.AWGNChannel('NoiseMethod', 'Signal to noise ratio (Eb/No)','EbNo',list_EbN0_dB(1),'BitsPerSymbol',2,'SignalPower',alpha^2);
 
 
 %%
 o2b = OctToBit();
 b2o = BitToOct();
 %%
-ber = zeros(1,length(list_EbN0));
+ber = zeros(1,length(list_EbN0_dB));
 
-for i_snr = 1:length(list_EbN0)
+Pe = qfunc(sqrt(2*list_EbN0));
+
+for i_snr = 1:length(list_EbN0_dB)
     message_source.reset;
+    awgn_channel.EbNo=list_EbN0_dB(i_snr);
+    n_trame = 0;
+    n_erreur = 0;
     while(~isDone(message_source))
         %% Emetteur
         tx_oct     = step(message_source); % Lire une trame
@@ -66,11 +70,15 @@ for i_snr = 1:length(list_EbN0)
         rx_bit = step(demod_psk,rx_sps);
         rx_scr_oct = b2o(rx_bit<0);
         rx_oct = bitxor(rx_scr_oct,dvb_scramble); % scrambler
-        [~,ber(i_snr)] = biterr(tx_oct,rx_oct);
-        
+        n_erreur = n_erreur + biterr(tx_oct,rx_oct);
+        n_trame = n_trame + 1;
     end
-    
-    semilogy(list_EbN0,ber);
+    ber(i_snr) = n_erreur/(n_trame*frame_bit_sz);
+    semilogy(list_EbN0_dB,ber);
     drawnow
 end
+hold all
+semilogy(list_EbN0_dB,Pe);
+
+
 
