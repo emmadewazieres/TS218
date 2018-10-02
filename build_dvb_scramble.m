@@ -1,13 +1,13 @@
 function dvb_scramble = build_dvb_scramble()
 scrambler  = comm.Scrambler(...
     'CalculationBase', 2,...
-    'Polynomial','1 + z^-14 + z^-15',...
+    'Polynomial',[0,-14,-15],...
     'InitialConditions',[1 0 0 1 0 1 0 1 0 0 0 0 0 0 0]);        
 
 frame_sz = 8*8*188;
 pckt_sz = 188*8;
 
-scramble_sequence = scrambler(zeros(frame_sz-8,1));
+scramble_sequence = step(scrambler,zeros(frame_sz-8,1));
 scrambler_enable = ones(size(scramble_sequence));
 
 for i_pckt = 0:6
