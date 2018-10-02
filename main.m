@@ -21,7 +21,7 @@ frame_bit_sz   = 8*frame_oct_sz; % Une trame = 8 paquets
 % Parametres fichiers
 % -------------------------------------------------------------------------
 tx_vid_fname = 'tx_stream.ts';  % Fichier contenant le message � transmettre
-message_source = dsp.BinaryFileReader('Filename', tx_vid_fname, 'SamplesPerFrame', msg_oct_sz*pckt_per_frame, 'DataType', 'uint8');
+message_source = BinaryFileReader('Filename', tx_vid_fname, 'SamplesPerFrame', msg_oct_sz*pckt_per_frame);
 % ------------------------------------------------------------------------
 
 
@@ -54,7 +54,7 @@ for i_snr = 1:length(list_EbN0_dB)
     awgn_channel.EbNo=list_EbN0_dB(i_snr);
     n_trame = 0;
     n_erreur = 0;
-    while(~isDone(message_source))
+    while(n_erreur < 100 && n_trame < 100)
         %% Emetteur
         tx_oct     = step(message_source); % Lire une trame
         tx_scr_oct = bitxor(tx_oct,dvb_scramble); % scrambler
