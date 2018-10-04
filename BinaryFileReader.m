@@ -1,15 +1,28 @@
 classdef BinaryFileReader < matlab.System
-    % tx_waveform
-    
     % Public, but non-tunable properties
     properties (Nontunable)
         Filename = '',
-        SamplesPerFrame = 188
+        SamplesPerFrame = 1,
+        DataType='double',
     end
     
+    properties (Logical, Nontunable)
+        % IsDataComplex Data is complex
+        % If the data stored in the file is complex, set this property to
+        % true. Otherwise, set it to false. The default is false.
+        IsDataComplex = false;
+        
+    end
     properties
         PlayCount = 1
     end
+    
+    properties (Access = protected)
+        % pIsDone True if there are no more samples in the file
+        pIsDone
+    end
+    
+    
     
     % Pre-computed constants
     properties(Access = private)
@@ -19,25 +32,30 @@ classdef BinaryFileReader < matlab.System
     
     properties(Constant, Hidden)
         PadValue = 0
+        
     end
-    
     
     methods(Access = public)
         function obj = BinaryFileReader(varargin)
             setProperties(obj, nargin, varargin{:});
+            obj.pIsDone = false;
         end
         
-        
+        function tf = isDone(obj)
+            tf = obj.pIsDone;
+        end
     end
     
     methods(Access = protected)
+        
+        
         % initialize the object
         function setupImpl(obj)
             % Populate obj.pFID
             getWorkingFID(obj)
             
             % Go to start of data
-            goToStartOfData(obj)
+            goToStartOfData(obj)            
         end
         
         % execute the core functionality
@@ -45,18 +63,18 @@ classdef BinaryFileReader < matlab.System
             bs = obj.SamplesPerFrame;
             y = readBuffer(obj, bs);
         end
-        function tf = isDoneImpl(obj)
-            tf = logical(feof(obj.pFID));
-        end
+        
         function resetImpl(obj)
             goToStartOfData(obj);
             obj.pNumEofReached = 0;
+            obj.pIsDone = false;
         end
         
         % release the object and its resources
         function releaseImpl(obj)
             fclose(obj.pFID);
             obj.pFID = -1;
+            obj.pIsDone = false;
         end
         
         % indicate if we have reached the end of the file
@@ -98,7 +116,7 @@ classdef BinaryFileReader < matlab.System
             if(obj.pFID < 0)
                 [obj.pFID, err] = fopen(obj.Filename, 'r');
                 if ~isempty(err)
-                    error(message('FileReader:fileError', err));
+                    error(['FileReader: ', err]);
                 end
             end
             
@@ -112,28 +130,46 @@ classdef BinaryFileReader < matlab.System
         
         function rawData = readBuffer(obj, numValues)
             bufferSize = obj.SamplesPerFrame;
-            tmp = fread(obj.pFID, obj.SamplesPerFrame, 'uint8'); % Lire une trame
+            if obj.IsDataComplex
+                rbs = 2*bufferSize;
+                nv = numValues*2;
+            else
+                rbs = bufferSize;
+                nv = numValues;
+            end
+            
+            dt = obj.DataType;
+            tmp = fread(obj.pFID, rbs, dt); % Lire une trame
             
             numValuesRead = numel(tmp);
             
-            if(numValuesRead == bufferSize)&&(~feof(obj.pFID))
-                rawData = tmp;
+            if(numValuesRead == rbs)&&(~feof(obj.pFID))
+                rD = tmp;
             else
                 % End of file - may also need to complete frame
                 obj.pNumEofReached = obj.pNumEofReached + 1;
                 if(obj.pNumEofReached < obj.PlayCount)
                     % Keep reading from start of file
                     goToStartOfData(obj)
-                    moreData = readBuffer(obj, numValues-numValuesRead);
-                    rawData = [tmp; moreData];
+                    moreData = readBuffer(obj, nv-numValuesRead);
+                    rD = [tmp; moreData];
                 else
                     % First pad with pad value, then reshape
                     padVector = repmat(obj.PadValue, ...
-                        numValues - numValuesRead, 1);
-                    rawData = [tmp; padVector];
+                        nv - numValuesRead, 1);
+                    rD = [tmp; padVector];
                 end
+                
             end
-            rawData = uint8(rawData);
+            
+            obj.pIsDone = logical(feof(obj.pFID));
+            rD = cast(rD,dt);
+            if obj.IsDataComplex
+                rawData = complex(rD(1:2:end),rD(2:2:end));
+            else
+                rawData = rD;
+            end
+            
         end
         
     end
