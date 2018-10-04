@@ -11,12 +11,6 @@ function waveform_params = configure_waveform(varargin)
 % FILTER_SPAN : etendue du filtre en racine de cosinus sur-eleve  - DEFAUT 4
 % M : Ordre de la PSK (2, 4 ou 8) - DEFAUT 4
 % PHI0 : Phase initiale de la PSK  - DEFAUT pi/4
-% CF_SYNC_RES : resolution de la synchronisation frequentielle grossiere  - DEFAUT 1e3
-% FF_DAMPING : facteur de damping de la synchronisation frequentielle fine  - DEFAUT 0.707
-% FF_LOOP_BW : bande passante de la synchronisation frequentielle fine  - DEFAUT 0.005
-% FS_DAMPING : facteur de damping de la synchronisation temporelle fine  - DEFAUT 1
-% FS_LOOP_BW : bande passante de la synchronisation temporelle fine  - DEFAUT 0.01
-% FS_DET_GAIN : facteur de damping de la synchronisation temporelle fine  - DEFAUT 2.7
 
 
 if nargin < 1
