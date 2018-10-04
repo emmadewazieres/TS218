@@ -23,7 +23,7 @@ channel_params  = configure_channel(0:10); % LEs paramètres du canal
 %% Création des objets
 [mod_psk, demod_psk]           = build_mdm(waveform_params); % Construction des modems
 dvb_scramble                   = build_dvb_scramble(); %Construction du scrambler
-[awgn_channel, doppler, delay] = build_channel(channel_params, waveform_params); % Blocs du canal
+[awgn_channel, doppler, channel_delay] = build_channel(channel_params, waveform_params); % Blocs du canal
 stat_erreur = comm.ErrorRate('ReceiveDelay', 0, 'ComputationDelay',0); % Calcul du nombre d'erreur et du BER
 
 % Conversions octet <-> bits
@@ -60,7 +60,7 @@ for i_snr = 1:length(channel_params.EbN0dB)
 			
 			%% Canal
 			tx_sps_dpl = step(doppler, tx_sym); % Simulation d'un effet Doppler
-			rx_sps_del = step(delay, tx_sps_dpl, channel_params.Delai); % Ajout d'un retard de propagation
+			rx_sps_del = step(channel_delay, tx_sps_dpl, channel_params.Delai); % Ajout d'un retard de propagation
 			rx_sps     = step(awgn_channel,channel_params.Gain * rx_sps_del); % Ajout d'un bruit gaussien
 			
 			%% Recepteur
