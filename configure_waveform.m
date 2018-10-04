@@ -2,7 +2,7 @@ function waveform_params = configure_waveform(varargin)
 % CONFIGURE_WAVEFORM cree une structure de parametres de la parte mise en
 % forme du signal (TX et RX)
 %
-% WAVEFORM_PARAMS = CONFIGURE_WAVEFORM(FE, FEI, DS, FILTER_ROLLOFF, FILTER_SPAN, M, PHI0, CF_SYNC_RES, FF_DAMPING, FF_LOOP_BW, FS_DAMPING, FS_LOOP_BW, FS_DET_GAIN)
+% WAVEFORM_PARAMS = CONFIGURE_WAVEFORM(FE, FEI, DS, FILTER_ROLLOFF, FILTER_SPAN, M, PHI0)
 % construit WAVEFORM_PARAMS a partir des parametres suivants :
 % FE : frequence d'echantillonnage (canal) - DEFAUT 4e6
 % FEI : Frequence intermediaire en sortie de filtre adapte - DEFAUT 2e6
@@ -11,7 +11,6 @@ function waveform_params = configure_waveform(varargin)
 % FILTER_SPAN : etendue du filtre en racine de cosinus sur-eleve  - DEFAUT 4
 % M : Ordre de la PSK (2, 4 ou 8) - DEFAUT 4
 % PHI0 : Phase initiale de la PSK  - DEFAUT pi/4
-
 
 if nargin < 1
     Fe = 4e6;
@@ -38,7 +37,7 @@ else
 end
 
 if nargin < 5
-    filter_span = 16;
+    filter_span = 8;
 else
     filter_span = varargin{5};
 end
