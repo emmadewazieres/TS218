@@ -18,7 +18,7 @@ bool_store_rec_video = false;
 
 %% Création des structures de paramètres
 waveform_params = configure_waveform(); % Les parametres de la mise en forme
-channel_params  = configure_channel(0:10); % LEs paramètres du canal
+channel_params  = configure_channel(0:10,0); % LEs paramètres du canal
 
 %% Création des objets
 [mod_psk, demod_psk]           = build_mdm(waveform_params); % Construction des modems
@@ -31,7 +31,7 @@ o2b = OctToBit();
 b2o = BitToOct();
 
 % Lecture octet par octet du fichier vidéo d'entree
-message_source = BinaryFileReader('Filename', tx_vid_fname, 'SamplesPerFrame', msg_oct_sz*pckt_per_frame, 'DataType', 'uint8');
+message_source      = BinaryFileReader('Filename', tx_vid_fname, 'SamplesPerFrame', msg_oct_sz*pckt_per_frame, 'DataType', 'uint8');
 % Ecriture octet par octet du fichier vidéo de sortie
 message_destination = BinaryFileWriter('DataType','uint8');
 
@@ -49,8 +49,9 @@ for i_snr = 1:length(channel_params.EbN0dB)
 	
 	stat_erreur.reset; % reset du compteur d'erreur
 	err_stat = [0 0 0];
-	while (err_stat(2) < 100 && err_stat(3) < 1e9)
+	while (err_stat(2) < 100 && err_stat(3) < 1e6)
 		message_source.reset;
+		message_destination.reset;
 		while(~message_source.isDone)
 			%% Emetteur
 			tx_oct     = step(message_source); % Lire une trame
@@ -64,7 +65,7 @@ for i_snr = 1:length(channel_params.EbN0dB)
 			rx_sps     = step(awgn_channel,channel_params.Gain * rx_sps_del); % Ajout d'un bruit gaussien
 			
 			%% Recepteur
-			rx_scr_llr = step(demod_psk,rx_sps);% Ce bloc nous renvoie des LLR (meilleur si on va interface avec du codage)
+			rx_scr_llr = step(demod_psk,rx_sps);% Ce bloc nous renvoie des LLR (meilleur si on va interface avec du codage)			
 			rx_scr_bit = rx_scr_llr<0; % Bits
 			rx_scr_oct = step(b2o,rx_scr_bit); % Conversion en octet pour le scrambler
 			% Attention à la synchro ici
@@ -82,7 +83,7 @@ for i_snr = 1:length(channel_params.EbN0dB)
 		end
 	end
 	ber(i_snr) = err_stat(1);
-	semilogy(channel_params.EbN0dB,ber);
+	figure(1),semilogy(channel_params.EbN0dB,ber);
 	drawnow
 end
 hold all
