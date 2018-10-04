@@ -2,37 +2,91 @@ function waveform_params = configure_waveform(varargin)
 % CONFIGURE_WAVEFORM cree une structure de parametres de la parte mise en
 % forme du signal (TX et RX)
 %
-% WAVEFORM_PARAMS = CONFIGURE_WAVEFORM(FE, M, PHI0)
+% WAVEFORM_PARAMS = CONFIGURE_WAVEFORM(FE, FEI, DS, FILTER_ROLLOFF, FILTER_SPAN, M, PHI0, CF_SYNC_RES, FF_DAMPING, FF_LOOP_BW, FS_DAMPING, FS_LOOP_BW, FS_DET_GAIN)
 % construit WAVEFORM_PARAMS a partir des parametres suivants :
-% FE : frequence d'echantillonnage (canal) - DEFAUT 1e6
+% FE : frequence d'echantillonnage (canal) - DEFAUT 4e6
+% FEI : Frequence intermediaire en sortie de filtre adapte - DEFAUT 2e6
+% DS : Debit symbole - DEFAUT 1e6
+% FILTER_ROLLOFF : rolloff du filtre en racine de cosinus sur-eleve - DEFAUT 0.35
+% FILTER_SPAN : etendue du filtre en racine de cosinus sur-eleve  - DEFAUT 4
 % M : Ordre de la PSK (2, 4 ou 8) - DEFAUT 4
 % PHI0 : Phase initiale de la PSK  - DEFAUT pi/4
+% CF_SYNC_RES : resolution de la synchronisation frequentielle grossiere  - DEFAUT 1e3
+% FF_DAMPING : facteur de damping de la synchronisation frequentielle fine  - DEFAUT 0.707
+% FF_LOOP_BW : bande passante de la synchronisation frequentielle fine  - DEFAUT 0.005
+% FS_DAMPING : facteur de damping de la synchronisation temporelle fine  - DEFAUT 1
+% FS_LOOP_BW : bande passante de la synchronisation temporelle fine  - DEFAUT 0.01
+% FS_DET_GAIN : facteur de damping de la synchronisation temporelle fine  - DEFAUT 2.7
 
 
 if nargin < 1
-    Fe = 1e6;
+    Fe = 4e6;
 else
     Fe = varargin{1};
 end
 
 if nargin < 2
+    Fei = 2e6;
+else
+    Fei = varargin{2};
+end
+
+if nargin < 3
+    Ds = 1e6;
+else
+    Ds = varargin{3};
+end
+
+if nargin < 4
+    filter_rolloff = 0.35;
+else
+    filter_rolloff = varargin{4};
+end
+
+if nargin < 5
+    filter_span = 16;
+else
+    filter_span = varargin{5};
+end
+
+if nargin < 6
     M=4;
 else
     M = varargin{6};
 end
 
-if nargin < 3
+if nargin < 7
     phi0=pi/4;
 else
     phi0 = varargin{7};
 end
 
 waveform_params.sim.Fe = Fe;        % Frequence d'echantillonnage
-waveform_params.sim.Ds = Fe; % Sampling frequency (Hz)
+waveform_params.sim.Ds = Ds; % Sampling frequency (Hz)
 
-Fse = floor(waveform_params.sim.Fe/waveform_params.sim.Ds);
+Fse = floor(Fe/Ds);
+Fsei = floor(Fei/Ds);
 
 waveform_params.sim.Fse = Fse;   % sapn du filtre de mise en forme
+waveform_params.sim.Fsei = Fsei;   % sapn du filtre de mise en forme
+
+% Parametres du filtre de mise en forme
+% -------------------------------------------------------------------------
+waveform_params.txflt.RolloffFactor          = filter_rolloff; % roll-off du filtre de mise en forme
+waveform_params.txflt.FilterSpanInSymbols    = filter_span;   % span du filtre de mise en forme
+waveform_params.txflt.OutputSamplesPerSymbol = Fse;   % sapn du filtre de mise en forme
+% -------------------------------------------------------------------------
+
+
+% Parametres du filtre adapté
+% -------------------------------------------------------------------------
+waveform_params.rxflt.RolloffFactor          = filter_rolloff; % roll-off du filtre de mise en forme
+waveform_params.rxflt.FilterSpanInSymbols    = filter_span;   % span du filtre de mise en forme
+waveform_params.rxflt.InputSamplesPerSymbol  = Fse;   % Nombre d'echantillons par symboles
+waveform_params.rxflt.DecimationFactor       = floor(Fse/Fsei);   % Facteur de sous-échantillonnage
+waveform_params.rxflt.DecimationOffset       = 0;   % Phase du sous-échantillonnage
+% -------------------------------------------------------------------------
+
 
 switch M
     case 2
@@ -66,4 +120,3 @@ waveform_params.demod.BitOutput        = true;
 waveform_params.demod.DecisionMethod  = 'Log-likelihood ratio';
 waveform_params.demod.Variance        = 1;
 % -------------------------------------------------------------------------
-
