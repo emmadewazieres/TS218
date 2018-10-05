@@ -1,5 +1,5 @@
-# Projet_SRT
-Projet de transmission vidéo utilisant des radios-logicielles.
+# Projet EN31 
+## Projet de transmission vidéo utilisant des radios-logicielles.
 
 Le fichier ````tx_stream.ts````, a été créé en utilisant FFMPEG :
 ````
