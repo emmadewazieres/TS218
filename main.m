@@ -162,11 +162,11 @@ for i_snr = 1:length(channel_params.EbN0dB)
             %    fwrite(s, tx_scr_oct(i))
             %    pause(0.1)
             %end
-            tx_rs_oct_soft  = step(rs_enc, tx_scr_oct); % Encodage RS
+            %tx_rs_oct_soft  = step(rs_enc, tx_scr_oct); % Encodage RS
             %tx_rs_oct = uint8((fread(s, 1632)));
             
-            tx_itl_oct = step(cv_itl, tx_rs_oct_soft); % Entrelaceur
-            tx_itl_bit = step(o2b,tx_itl_oct); % Octets -> Bits
+            %tx_itl_oct = step(cv_itl, tx_rs_oct_soft); % Entrelaceur
+            %tx_itl_bit = step(o2b,tx_itl_oct); % Octets -> Bits
             
              %if( tb_frame_nb ~=0)
              %    fprintf(tb_file, '%d \n', tx_scr_oct);
@@ -188,7 +188,7 @@ for i_snr = 1:length(channel_params.EbN0dB)
             %    tb_frame_nb = tb_frame_nb-1;
            % end
             
-            tx_cc_soft      = step(cc_enc,   tx_itl_bit); % Encodage Convolutif
+            %tx_cc_soft      = step(cc_enc,   tx_itl_bit); % Encodage Convolutif
             
             tx_sym     = step(mod_psk,  tx_cc); % Modulation QPSK
             T_tx       = T_tx+toc;

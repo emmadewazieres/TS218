@@ -60,6 +60,21 @@ component transmitter is
            data_valid : out std_logic);
 end component;
 
+component write_int_file is
+	 generic (
+		log_file:       string  := "results.log";
+		frame_size:			integer := 203;
+		symb_max_val : integer := 255;
+		data_size : integer := 8
+	 );
+	 port(
+		CLK              : in std_logic;
+		RST              : in std_logic;
+		data_valid       : in std_logic;
+		data             : in std_logic_vector(data_size-1 downto 0)
+	 );
+  end component;
+  
 
 signal rst : STD_LOGIC;
 signal clk : std_logic := '0';
@@ -89,7 +104,7 @@ counters : process (clk, rst) begin
         enable_read_byte <= '0';		
     elsif (rising_edge(clk)) then
         if(enable = '1') then
-            if(counter = 156) then
+            if(counter = 300) then
                 counter <= (others => '0');
                 enable_read_byte <= '1';			
             else
@@ -100,7 +115,7 @@ counters : process (clk, rst) begin
     end if;
 end process;
 
-input_file : read_int_file generic map("U.txt", 1, 255, 8)
+input_file : read_int_file generic map("message_source.txt", 1, 255, 8)
 port map(clk, rst, enable_read_byte, incoming_byte);
 
 delay : process (clk, rst) begin
@@ -112,5 +127,8 @@ delay : process (clk, rst) begin
 end process;
 
 uut : transmitter port map(rst, clk, enable_shift_byte, incoming_byte, stream_out, data_valid);
+
+output_file : write_int_file generic map("output.txt", 1, 255, 8)
+	 port map(clk, rst, data_valid, stream_out);
                             
 end Behavioral;

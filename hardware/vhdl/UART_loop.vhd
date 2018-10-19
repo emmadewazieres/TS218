@@ -47,7 +47,8 @@ component UART_fifoed_send is
               fifo_almost           : integer := 4090;
               drop_oldest_when_full : boolean := False;
               asynch_fifo_full      : boolean := True;
-              baudrate              : integer := 921600;   -- [bps]
+              --baudrate              : integer := 921600;   -- [bps]
+              baudrate              : integer := 115200;   -- [bps]
               clock_frequency       : integer := 100000000 -- [Hz]
     );
     Port (
@@ -62,8 +63,10 @@ component UART_fifoed_send is
     );
 end component;
 
-
 component UART_recv is
+   Generic( baudrate        : integer := 115200;   -- [bps]
+            clock_frequency : integer := 100000000 -- [Hz]
+    );
    Port ( clk    : in  STD_LOGIC;
           reset  : in  STD_LOGIC;
           rx     : in  STD_LOGIC;
@@ -85,12 +88,11 @@ signal dat : std_logic_vector(7 downto 0);
 signal scrambled_bit : std_logic;
 signal sent_byte : std_logic_vector(7 downto 0);
 signal data_valid : std_logic;
-signal en_counter : unsigned(13 downto 0) := (others => '0');
+signal en_counter, dv_counter : unsigned(13 downto 0) := (others => '0');
 
 signal fifo_empty, fifo_afull, fifo_full : std_logic;
 
 begin
-
 
 	enable_counters:
 	process (clk, rst) begin
@@ -98,20 +100,31 @@ begin
          if (rst = '1') then
                en_counter <= (others => '0');
          elsif(dat_en = '1') then				
-				  en_counter <= en_counter + 1;				
+				  en_counter <= en_counter + 1;				  
          else
-               en_counter <= en_counter;				
+               en_counter <= en_counter;		
+         end if;
+         if (rst = '1') then
+               dv_counter <= (others => '0');
+         elsif(data_valid = '1') then            
+              dv_counter <= dv_counter + 1;
+         else
+               dv_counter <= dv_counter;         
          end if;
 		end if;
 	end process;
 	
-	led(15 downto 9) <= std_logic_vector(en_counter(6 downto 0));
-	led(0) <= fifo_empty;
-	led(1) <= fifo_afull;
-	led(2) <= fifo_full;
-	led(8 downto 3) <= (others => '1'); 
+	led(13 downto 0) <= std_logic_vector(en_counter) when sw(0) = '1' else std_logic_vector(dv_counter);
+	
+	led(14) <= fifo_empty;
+	led(15) <= fifo_afull;
+	--led(2) <= fifo_full;
+	--led(8 downto 3) <= (others => '1'); 
 
-	recv : UART_recv port map(  clk => clk,
+	recv : UART_recv generic map(--
+	                             baudrate => 921600,
+					                clock_frequency => 100000000)
+	                 port map(  clk => clk,
 		                    reset => rst,
 		                    rx => i_uart,
 		                    dat => dat,
@@ -124,11 +137,12 @@ begin
 		                      stream_out => sent_byte,
 		                      data_valid => data_valid);
 		                      
-	send : UART_fifoed_send Generic map( fifo_size => 10,
+	send : UART_fifoed_send Generic map( fifo_size => 15000,
 					      fifo_almost => 8,
 					      drop_oldest_when_full => false,
 					      asynch_fifo_full => True,
-					      baudrate => 115200,
+					      baudrate => 921600,
+					      --baudrate => 256000,
 					      clock_frequency => 100000000)
 	    Port map(   clk_100MHz => clk,
 			reset => rst,
