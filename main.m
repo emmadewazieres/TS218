@@ -76,6 +76,7 @@ message_source = BinaryFileReader(...
     'DataType', 'uint8');
 
 % Ecriture octet par octet du fichier video de sortie
+
 message_destination = BinaryFileWriter('DataType','uint8');
 
 %%

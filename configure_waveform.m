@@ -45,13 +45,13 @@ end
 if nargin < 6
     M=4;
 else
-    M = varargin{6};
+    M = varargin{2};
 end
 
 if nargin < 7
     phi0=pi/4;
 else
-    phi0 = varargin{7};
+    phi0 = varargin{3};
 end
 
 waveform_params.sim.Fe = Fe;        % Frequence d'echantillonnage
