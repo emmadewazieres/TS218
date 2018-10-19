@@ -1,7 +1,7 @@
-function channel_params = configure_channel(varargin)
+function channel_params = configure_channel(waveform_params, coding_params, varargin)
 % CONFIGURE_CHANNEL cree une structure de parametres du canal
 %
-% CHANNEL_PARAMS = CONFIGURE_CHANNEL(EbN0dB, FrequencyOffset, PhaseOffset, Gain, Delai)
+% CHANNEL_PARAMS = CONFIGURE_CHANNEL(waveform_params, coding_params, EbN0dB, FrequencyOffset, PhaseOffset, Gain, Delai)
 % construit CHANNEL_PARAMS a partir des parametres suivants :
 % EbN0dB : liste des valeurs de EbN0 en dB a simuler - DEFAUT 30
 % FrequencyOffset : Decalage Frequentiel  - DEFAUT 0
@@ -35,4 +35,6 @@ else
     channel_params.Delai = varargin{5};    
 end
 
-channel_params.EbN0 = 10.^(channel_params.EbN0dB/10);
+channel_params.EbN0   = 10.^(channel_params.EbN0dB/10);
+channel_params.EsN0   = channel_params.EbN0 * waveform_params.mod.ModulationBPS * coding_params.code_rate;
+channel_params.EsN0dB = 10 * log10(channel_params.EsN0);
