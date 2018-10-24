@@ -130,66 +130,88 @@ for i_snr = 1:length(channel_params.EbN0dB)
     stat_erreur.reset; % reset du compteur d'erreur
     err_stat = [0 0 0];
     
-    %tb_file = fopen('message_source.txt','w');
+    tb_file = fopen('message_source.txt','w');
     
     tb_frame_nb = 3;
     T_rx = 0;
     T_tx = 0;
     while (err_stat(2) < 100 && err_stat(3) < 1e6)
-    %while(1)
-        message_source.reset;
-        
+
+        message_source.reset;        
         while(~message_source.isDone)
             %% Emetteur
             tic
             tx_oct     = step(message_source); % Lire une trame
             
-            %%%%%%%%%%%%%
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            % SOFTWARE ONLY
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            %tx_scr_oct = bitxor( tx_oct, dvb_scramble);
+            %tx_rs_oct  = step  ( rs_enc, tx_scr_oct  ); % Encodage RS
+            %tx_itl_oct = step  ( cv_itl, tx_rs_oct   ); % Entrelaceur
+            %tx_itl_bit = step  ( o2b   , tx_itl_oct  ); % Octets -> Bits
+            %tx_cc      = step  ( cc_enc, tx_itl_bit  ); % Encodage Convolutif
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
             % HARDWARE IN THE LOOP
-            %tx_oct_s     = step(message_source); % Lire une trame
-            %for i = [1:length(tx_oct_s)]
-            %fwrite(s, tx_oct_s(i))
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            % RS + ITL + CC
+            
+            tx_scr_oct = bitxor(tx_oct, dvb_scramble); % scrambler
+            
+            % generate test vectors for VHDL simulation
+            %if( tb_frame_nb ~=0)
+            %    fprintf(tb_file, '%d \n', tx_scr_oct);
+            %    tb_frame_nb = tb_frame_nb-1;
             %end
-            %fwrite(s, tx_oct_s)
             
-            %pause(0.01)
-            %tx_oct = uint8((fread(s, length(tx_oct_s))));
-            %%%%%%%%%%%%%
-            
-            tx_scr_oct = bitxor(tx_oct,dvb_scramble); % scrambler
             fwrite(s, tx_scr_oct);
-            %for i = [1:length(tx_scr_oct)]
-            %    fwrite(s, tx_scr_oct(i))
-            %    pause(0.1)
-            %end
-            %tx_rs_oct_soft  = step(rs_enc, tx_scr_oct); % Encodage RS
-            %tx_rs_oct = uint8((fread(s, 1632)));
-            
-            %tx_itl_oct = step(cv_itl, tx_rs_oct_soft); % Entrelaceur
-            %tx_itl_bit = step(o2b,tx_itl_oct); % Octets -> Bits
-            
-             %if( tb_frame_nb ~=0)
-             %    fprintf(tb_file, '%d \n', tx_scr_oct);
-            %     tb_frame_nb = tb_frame_nb-1;
-            % end
-            
-            %fwrite(s, tx_rs_oct)
-            %for i = [1:length(tx_itl_oct)]
-            %fwrite(s, tx_itl_oct(i))
-            %end
-            %tx_itl_oct = uint8((fread(s, length(tx_rs_oct))));
-            %tx_itl_bit = step(o2b,tx_itl_oct); % Octets -> Bits
-            cc_hw = uint8((fread(s, 13056)));
+            cc_hw = uint8((fread(s, 8*pckt_per_frame*204))); % 13056
             cc_hw_bin = de2bi(cc_hw,2,'left-msb');
             tx_cc = reshape(cc_hw_bin',numel(cc_hw_bin),1);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
             
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            % ITL + CC
+            %tx_scr_oct = bitxor( tx_oct, dvb_scramble); % scrambler
+            %tx_rs_oct  = step  ( rs_enc, tx_scr_oct  ); % Encodage RS
+            
+            % generate test vectors for VHDL simulation
             %if( tb_frame_nb ~=0)
             %    fprintf(tb_file, '%d \n', tx_rs_oct);
             %    tb_frame_nb = tb_frame_nb-1;
-           % end
+            %end
             
-            %tx_cc_soft      = step(cc_enc,   tx_itl_bit); % Encodage Convolutif
+            %fwrite(s, tx_rs_oct);
+            %cc_hw = uint8((fread(s, 8*pckt_per_frame*204))); % 13056
+            %cc_hw_bin = de2bi(cc_hw,2,'left-msb');
+            %tx_cc = reshape(cc_hw_bin',numel(cc_hw_bin),1);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
             
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            % CC
+            %tx_scr_oct = bitxor( tx_oct, dvb_scramble); % scrambler
+            %tx_rs_oct  = step  ( rs_enc, tx_scr_oct  ); % Encodage RS
+            %tx_itl_oct = step  ( cv_itl, tx_rs_oct   ); % Entrelaceur
+            
+            % generate test vectors for VHDL simulation
+            %if( tb_frame_nb ~=0)
+            %    fprintf(tb_file, '%d \n', tx_itl_oct);
+            %    tb_frame_nb = tb_frame_nb-1;
+            %end
+            
+            %fwrite(s, tx_itl_oct);
+            %cc_hw = uint8((fread(s, 8*pckt_per_frame*204))); % 13056
+            %cc_hw_bin = de2bi(cc_hw,2,'left-msb');
+            %tx_cc = reshape(cc_hw_bin',numel(cc_hw_bin),1);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+           
             tx_sym     = step(mod_psk,  tx_cc); % Modulation QPSK
             T_tx       = T_tx+toc;
             %% Canal
