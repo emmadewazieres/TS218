@@ -1,5 +1,5 @@
-# Projet EN31 
-## Projet de transmission vidéo utilisant des radios-logicielles.
+# Projet TS218
+## Projet de transmission vidéo utilisant des radios-logicielles et le standard DVB-S.
 
 Le fichier ````tx_stream.ts````, a été créé en utilisant FFMPEG :
 ````
